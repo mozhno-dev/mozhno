@@ -72,10 +72,10 @@ public class UserRepository {
         }
     }
 
-    public List<User> findAll() {
+    public List<User> findByProjectId(Integer projectId) {
         return jdbc.query(
-            "SELECT " + USER_COLUMNS + " FROM users ORDER BY created_at DESC",
-            ROW_MAPPER);
+            "SELECT " + USER_COLUMNS + " FROM users WHERE project_id = ? ORDER BY created_at DESC",
+            ROW_MAPPER, projectId);
     }
 
     public boolean existsByEmail(String email) {
@@ -87,6 +87,12 @@ public class UserRepository {
     public int count() {
         Integer count = jdbc.queryForObject(
             "SELECT COUNT(*) FROM users", Integer.class);
+        return count != null ? count : 0;
+    }
+
+    public int countByProjectId(Integer projectId) {
+        Integer count = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM users WHERE project_id = ?", Integer.class, projectId);
         return count != null ? count : 0;
     }
 

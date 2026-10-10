@@ -19,6 +19,7 @@ const SERVER_MESSAGE_TO_KEY: Record<string, MessageKey> = {
   'auth.error.account_suspended': 'errors.auth.accountSuspended',
   'auth.error.account_locked': 'errors.auth.accountLocked',
   'auth.error.no_auth_provider': 'errors.auth.noAuthProvider',
+  'auth.error.email_not_verified': 'errors.auth.emailNotVerified',
   'Authentication required': 'errors.unauthorized',
   'Access denied': 'errors.forbidden',
 };
@@ -28,6 +29,8 @@ const SERVER_CODE_TO_KEY: Record<string, MessageKey> = {
   UNSUPPORTED_IMAGE_FORMAT: 'errors.upload.unsupportedFormat',
   IMAGE_READ_ERROR: 'errors.upload.readError',
   IMAGE_TOO_LARGE: 'errors.upload.imageTooLarge',
+  CANNOT_DELETE_SELF: 'users.errors.cannotDeleteSelf',
+  MAIL_DELIVERY_FAILED: 'errors.mailDeliveryFailed',
 };
 
 function extractValidationDetails(error: AppError): string {

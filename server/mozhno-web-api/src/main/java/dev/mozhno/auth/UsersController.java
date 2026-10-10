@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import dev.mozhno.exception.BadRequestException;
 import dev.mozhno.util.MediaTypeUtils;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class UsersController {
     @Operation(summary = "Get all users (admin only)")
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserDto> getAll(@AuthenticationPrincipal UserPrincipal user) {
-        return userService.findAll();
+        return userService.findAll(user.projectId());
     }
 
     @GetMapping("/{id}")
@@ -42,7 +43,7 @@ public class UsersController {
     @PreAuthorize("hasRole('ADMIN')")
     public UserDto getById(@PathVariable Integer id,
                            @AuthenticationPrincipal UserPrincipal user) {
-        return userService.findById(id);
+        return userService.findById(id, user.projectId());
     }
 
     @PostMapping("/invite")
@@ -61,7 +62,7 @@ public class UsersController {
     public UserDto update(@PathVariable Integer id,
                            @Valid @RequestBody UserUpdateRequest request,
                            @AuthenticationPrincipal UserPrincipal user) {
-        return userService.update(id, request);
+        return userService.update(id, request, user.projectId());
     }
 
     @DeleteMapping("/{id}")
@@ -70,7 +71,10 @@ public class UsersController {
     @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable Integer id,
                         @AuthenticationPrincipal UserPrincipal user) {
-        userService.delete(id);
+        if (user.userId().equals(id)) {
+            throw new BadRequestException("CANNOT_DELETE_SELF", "You cannot delete your own account");
+        }
+        userService.delete(id, user.projectId());
     }
 
     @PostMapping("/{id}/avatar")
@@ -81,14 +85,14 @@ public class UsersController {
         if (!user.userId().equals(id) && !user.isAdmin()) {
             throw new org.springframework.security.access.AccessDeniedException("Cannot update another user's avatar");
         }
-        return userService.uploadAvatar(id, file);
+        return userService.uploadAvatar(id, file, user.projectId());
     }
 
     @GetMapping("/{id}/avatar")
     @Operation(summary = "Get the avatar image for a user")
     public ResponseEntity<byte[]> getAvatar(@PathVariable Integer id,
                                              @AuthenticationPrincipal UserPrincipal user) {
-        byte[] data = userService.getAvatarData(id);
+        byte[] data = userService.getAvatarData(id, user.projectId());
         if (data == null) {
             return ResponseEntity.notFound().build();
         }
@@ -100,7 +104,7 @@ public class UsersController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Object> sendResetLink(@PathVariable Integer id,
                                                  @AuthenticationPrincipal UserPrincipal user) {
-        passwordResetService.sendAdminResetEmail(id);
+        passwordResetService.sendAdminResetEmail(id, user.projectId());
         return ResponseEntity.ok(java.util.Map.of("message", "Password reset link sent"));
     }
 }

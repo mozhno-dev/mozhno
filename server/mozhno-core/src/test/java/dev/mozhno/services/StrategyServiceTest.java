@@ -156,11 +156,16 @@ class StrategyServiceTest {
 
     @Test
     void update_shouldUpdateStrategy() {
+        Flag flag = new Flag();
+        flag.setId(10);
+        flag.setProjectId(100);
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(flag);
+
         FlagStrategy existing = new FlagStrategy();
         existing.setId(1);
         existing.setFlagId(10);
         existing.setEnabled(false);
-        when(strategyRepository.findById(1)).thenReturn(existing);
+        when(strategyRepository.findByIdAndFlagId(1, 10)).thenReturn(existing);
 
         FlagStrategy updated = new FlagStrategy();
         updated.setId(1);
@@ -170,28 +175,49 @@ class StrategyServiceTest {
         StrategyRequest req = new StrategyRequest();
         req.setEnabled(true);
 
-        FlagStrategy result = strategyService.update(1, req);
+        FlagStrategy result = strategyService.update(1, req, 10, 100);
         assertTrue(result.isEnabled());
         verify(strategyRepository).updateById(1, true, null, null, null, null);
     }
 
     @Test
     void update_shouldThrowExceptionWhenNotFound() {
-        when(strategyRepository.findById(999)).thenReturn(null);
+        Flag flag = new Flag();
+        flag.setId(10);
+        flag.setProjectId(100);
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(flag);
+        when(strategyRepository.findByIdAndFlagId(999, 10)).thenReturn(null);
 
         StrategyRequest req = new StrategyRequest();
         req.setEnabled(true);
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> strategyService.update(999, req));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> strategyService.update(999, req, 10, 100));
         assertTrue(ex.getMessage().contains("Strategy not found"));
     }
 
     @Test
+    void update_shouldThrowWhenFlagBelongsToAnotherProject() {
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(null);
+
+        StrategyRequest req = new StrategyRequest();
+        req.setEnabled(true);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> strategyService.update(1, req, 10, 100));
+        assertTrue(ex.getMessage().contains("Flag not found"));
+        verify(strategyRepository, never()).updateById(anyInt(), anyBoolean(), any(), any(), any(), any());
+    }
+
+    @Test
     void update_shouldUpdatePercentage() {
+        Flag flag = new Flag();
+        flag.setId(10);
+        flag.setProjectId(100);
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(flag);
+
         FlagStrategy existing = new FlagStrategy();
         existing.setId(1);
         existing.setPercentage(10.0);
-        when(strategyRepository.findById(1)).thenReturn(existing);
+        when(strategyRepository.findByIdAndFlagId(1, 10)).thenReturn(existing);
 
         FlagStrategy updated = new FlagStrategy();
         updated.setId(1);
@@ -203,15 +229,20 @@ class StrategyServiceTest {
         req.setEnabled(true);
         req.setPercentage(75.0);
 
-        FlagStrategy result = strategyService.update(1, req);
+        FlagStrategy result = strategyService.update(1, req, 10, 100);
         assertEquals(75.0, result.getPercentage());
     }
 
     @Test
     void update_shouldUpdateContextFields() {
+        Flag flag = new Flag();
+        flag.setId(10);
+        flag.setProjectId(100);
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(flag);
+
         FlagStrategy existing = new FlagStrategy();
         existing.setId(1);
-        when(strategyRepository.findById(1)).thenReturn(existing);
+        when(strategyRepository.findByIdAndFlagId(1, 10)).thenReturn(existing);
 
         FlagStrategy updated = new FlagStrategy();
         updated.setId(1);
@@ -227,7 +258,7 @@ class StrategyServiceTest {
         req.setContextValuesJson("[\"mobile\"]");
         req.setSegmentIds(List.of(7));
 
-        FlagStrategy result = strategyService.update(1, req);
+        FlagStrategy result = strategyService.update(1, req, 10, 100);
         assertEquals(5, result.getContextDefinitionId());
         assertEquals("[\"mobile\"]", result.getContextValuesJson());
         assertEquals(List.of(7), result.getSegmentIds());
@@ -296,11 +327,25 @@ class StrategyServiceTest {
 
     @Test
     void delete_shouldCallRepository() {
+        Flag flag = new Flag();
+        flag.setId(10);
+        flag.setProjectId(100);
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(flag);
+
         FlagStrategy existing = new FlagStrategy();
         existing.setId(1);
-        when(strategyRepository.findById(1)).thenReturn(existing);
+        when(strategyRepository.findByIdAndFlagId(1, 10)).thenReturn(existing);
         doNothing().when(strategyRepository).deleteById(1);
-        strategyService.delete(1);
+        strategyService.delete(1, 10, 100);
         verify(strategyRepository).deleteById(1);
+    }
+
+    @Test
+    void delete_shouldThrowWhenFlagBelongsToAnotherProject() {
+        when(flagRepository.findByIdAndProjectId(10, 100)).thenReturn(null);
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> strategyService.delete(1, 10, 100));
+        assertTrue(ex.getMessage().contains("Flag not found"));
+        verify(strategyRepository, never()).deleteById(anyInt());
     }
 }

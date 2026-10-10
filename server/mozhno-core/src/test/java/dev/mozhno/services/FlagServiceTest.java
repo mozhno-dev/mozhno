@@ -85,4 +85,43 @@ class FlagServiceTest {
 
         assertEquals(3, flagService.countActiveByProjectId(1));
     }
+
+    @Test
+    void create_shouldRejectTagOfAnotherProject() {
+        FlagRequest request = new FlagRequest();
+        request.setProjectId(100);
+        request.setName("tagged");
+        request.setKey("tagged");
+        request.setTags(List.of(new FlagRequest.TagValue(7, "v")));
+        when(flagRepository.save(any(Flag.class))).thenAnswer(inv -> {
+            Flag f = inv.getArgument(0);
+            f.setId(1);
+            return f;
+        });
+        when(tagRepository.findAllByIds(List.of(7), 100)).thenReturn(List.of());
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> flagService.create(request, 1));
+        assertTrue(ex.getMessage().contains("Tag not found"));
+        verify(flagTagValueRepository, never()).saveBatch(anyInt(), any());
+    }
+
+    @Test
+    void update_shouldRejectTagOfAnotherProject() {
+        Flag flag = new Flag();
+        flag.setId(1);
+        flag.setProjectId(100);
+        when(flagRepository.findByIdAndProjectId(1, 100)).thenReturn(flag);
+        when(flagRepository.save(any(Flag.class))).thenReturn(flag);
+        when(tagRepository.findAllByIds(List.of(7), 100)).thenReturn(List.of());
+
+        FlagRequest request = new FlagRequest();
+        request.setProjectId(100);
+        request.setName("tagged");
+        request.setKey("tagged");
+        request.setTags(List.of(new FlagRequest.TagValue(7, "v")));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> flagService.update(1, request));
+        assertTrue(ex.getMessage().contains("Tag not found"));
+        verify(flagTagValueRepository, never()).saveBatch(anyInt(), any());
+    }
 }

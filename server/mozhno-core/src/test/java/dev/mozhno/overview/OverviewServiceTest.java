@@ -53,7 +53,7 @@ class OverviewServiceTest {
         lenient().when(flagMetricsService.getProjectMetrics(1, null)).thenReturn(List.of());
         lenient().when(clientInstanceRepository.findByProjectId(1)).thenReturn(List.of());
         lenient().when(apiKeyService.findByProjectId(1)).thenReturn(List.of());
-        lenient().when(userRepository.count()).thenReturn(1);
+        lenient().when(userRepository.countByProjectId(1)).thenReturn(1);
         lenient().when(auditService.findByProjectId(1, 0, 8, null, null)).thenReturn(List.of());
     }
 

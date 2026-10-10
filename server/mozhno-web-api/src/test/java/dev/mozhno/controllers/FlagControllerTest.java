@@ -47,7 +47,7 @@ class FlagControllerTest extends BaseIntegrationTest {
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"flag-test@test.com\",\"password\":\"secret\",\"projectId\":" + projectId + "}"))
+                .content("{\"email\":\"flag-test@test.com\",\"password\":\"secret\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 

@@ -28,6 +28,10 @@ class UserProjectLifecycleTest extends BaseIntegrationTest {
     private PasswordEncoder passwordEncoder;
 
     private User createAdmin(String email) {
+        Project project = new Project();
+        project.setName("Lifecycle " + email);
+        Integer projectId = projectRepository.save(project).getId();
+
         User admin = new User();
         admin.setEmail(email);
         admin.setPasswordHash(passwordEncoder.encode("password1"));
@@ -35,6 +39,7 @@ class UserProjectLifecycleTest extends BaseIntegrationTest {
         admin.setRole("admin");
         admin.setStatus("active");
         admin.setLocale("en");
+        admin.setProjectId(projectId);
         return userRepository.save(admin);
     }
 
@@ -93,7 +98,7 @@ class UserProjectLifecycleTest extends BaseIntegrationTest {
 
         dev.mozhno.exception.ConflictException ex = assertThrows(
             dev.mozhno.exception.ConflictException.class,
-            () -> userService.delete(admin.getId()));
+            () -> userService.delete(admin.getId(), admin.getProjectId()));
         assertTrue(ex.getMessage().contains("last admin"));
         assertNotNull(userRepository.findById(admin.getId()));
     }
@@ -103,7 +108,7 @@ class UserProjectLifecycleTest extends BaseIntegrationTest {
         User admin = createAdmin("del-admin@test.com");
         createUser("del-coadmin@test.com", "admin", admin.getId(), admin.getProjectId());
 
-        assertDoesNotThrow(() -> userService.delete(admin.getId()));
+        assertDoesNotThrow(() -> userService.delete(admin.getId(), admin.getProjectId()));
         assertNull(userRepository.findById(admin.getId()));
     }
 
@@ -114,7 +119,7 @@ class UserProjectLifecycleTest extends BaseIntegrationTest {
 
         var request = new UserUpdateRequest(null, "developer", null, null);
         var ex = assertThrows(dev.mozhno.exception.ConflictException.class,
-            () -> userService.update(admin.getId(), request));
+            () -> userService.update(admin.getId(), request, admin.getProjectId()));
         assertTrue(ex.getMessage().contains("last admin"));
         assertEquals("admin", userRepository.findById(admin.getId()).getRole());
     }
@@ -133,5 +138,32 @@ class UserProjectLifecycleTest extends BaseIntegrationTest {
 
         assertEquals(adminA.getProjectId(), userRepository.findById(devA.getId()).getProjectId());
         assertEquals(adminB.getProjectId(), userRepository.findById(devB.getId()).getProjectId());
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Project-scoped reads
+    // ══════════════════════════════════════════════════════════════════
+
+    @Test
+    void findAll_shouldReturnOnlyUsersOfProject() {
+        User adminA = createAdmin("list-a@test.com");
+        User devA = createUser("list-dev-a@test.com", "developer", adminA.getId(), adminA.getProjectId());
+        User adminB = createAdmin("list-b@test.com");
+
+        java.util.List<UserDto> users = userService.findAll(adminA.getProjectId());
+
+        assertEquals(2, users.size());
+        assertTrue(users.stream().anyMatch(u -> u.id().equals(adminA.getId())));
+        assertTrue(users.stream().anyMatch(u -> u.id().equals(devA.getId())));
+        assertFalse(users.stream().anyMatch(u -> u.id().equals(adminB.getId())));
+    }
+
+    @Test
+    void findById_shouldThrowForUserOfAnotherProject() {
+        User adminA = createAdmin("cross-a@test.com");
+        User adminB = createAdmin("cross-b@test.com");
+
+        assertThrows(dev.mozhno.exception.NotFoundException.class,
+            () -> userService.findById(adminB.getId(), adminA.getProjectId()));
     }
 }

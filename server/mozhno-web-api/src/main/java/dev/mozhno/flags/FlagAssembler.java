@@ -46,7 +46,8 @@ public class FlagAssembler {
         if (flag.getArchivedBy() != null) userIds.add(flag.getArchivedBy());
         Map<Integer, String> userNames = resolveUserNames(userIds);
 
-        List<FlagResponse.TagValueResponse> tags = resolveTags(flagTagValueRepository.findByFlagId(flag.getId()));
+        List<FlagResponse.TagValueResponse> tags = resolveTags(
+            flagTagValueRepository.findByFlagId(flag.getId()), flag.getProjectId());
         String createdBy = userNames.get(flag.getCreatorId());
         String archivedBy = userNames.get(flag.getArchivedBy());
 
@@ -91,7 +92,7 @@ public class FlagAssembler {
             Flag flag = fws.flag();
             FlagStrategy strategy = fws.strategy();
             List<FlagResponse.TagValueResponse> tags = resolveTags(
-                tagValuesByFlag.getOrDefault(flag.getId(), List.of()));
+                tagValuesByFlag.getOrDefault(flag.getId(), List.of()), flag.getProjectId());
 
             return FlagResponse.builder()
                 .id(flag.getId())
@@ -140,7 +141,7 @@ public class FlagAssembler {
             String archivedBy = userNameMap.get(first.getArchivedBy());
 
             List<EnrichedFlagResponse.TagValueResponse> tags =
-                resolveEnrichedTags(tagValuesByFlag.getOrDefault(first.getId(), List.of()));
+                resolveEnrichedTags(tagValuesByFlag.getOrDefault(first.getId(), List.of()), first.getProjectId());
 
             List<EnrichedFlagResponse.EnvironmentState> environments = group.stream()
                 .filter(fws -> fws.strategy() != null)
@@ -183,9 +184,9 @@ public class FlagAssembler {
         }).toList();
     }
 
-    private List<FlagResponse.TagValueResponse> resolveTags(List<FlagTagValue> tagValues) {
+    private List<FlagResponse.TagValueResponse> resolveTags(List<FlagTagValue> tagValues, Integer projectId) {
         List<Integer> tagIds = tagValues.stream().map(FlagTagValue::getTagId).distinct().toList();
-        Map<Integer, Tag> tagMap = loadTagMap(tagIds);
+        Map<Integer, Tag> tagMap = loadTagMap(tagIds, projectId);
 
         return tagValues.stream().map(ftv -> {
             Tag tag = tagMap.get(ftv.getTagId());
@@ -198,9 +199,9 @@ public class FlagAssembler {
         }).toList();
     }
 
-    private List<EnrichedFlagResponse.TagValueResponse> resolveEnrichedTags(List<FlagTagValue> tagValues) {
+    private List<EnrichedFlagResponse.TagValueResponse> resolveEnrichedTags(List<FlagTagValue> tagValues, Integer projectId) {
         List<Integer> tagIds = tagValues.stream().map(FlagTagValue::getTagId).distinct().toList();
-        Map<Integer, Tag> tagMap = loadTagMap(tagIds);
+        Map<Integer, Tag> tagMap = loadTagMap(tagIds, projectId);
 
         return tagValues.stream().map(ftv -> {
             Tag tag = tagMap.get(ftv.getTagId());
@@ -213,9 +214,9 @@ public class FlagAssembler {
         }).toList();
     }
 
-    private Map<Integer, Tag> loadTagMap(List<Integer> tagIds) {
+    private Map<Integer, Tag> loadTagMap(List<Integer> tagIds, Integer projectId) {
         if (tagIds.isEmpty()) return Collections.emptyMap();
-        return tagRepository.findAllByIds(tagIds).stream()
+        return tagRepository.findAllByIds(tagIds, projectId).stream()
             .collect(Collectors.toMap(Tag::getId, Function.identity()));
     }
 

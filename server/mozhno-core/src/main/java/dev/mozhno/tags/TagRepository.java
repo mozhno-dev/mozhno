@@ -111,16 +111,20 @@ public class TagRepository {
     }
 
     /**
-     * Returns all tags for the given IDs.
+     * Returns the tags with the given IDs that belong to the given project.
      *
      * @param ids list of tag IDs
+     * @param projectId the owning project ID
      * @return list of tags, empty if no IDs provided
      */
     @Cacheable(CacheNames.TAGS)
-    public List<Tag> findAllByIds(List<Integer> ids) {
+    public List<Tag> findAllByIds(List<Integer> ids, Integer projectId) {
         if (ids == null || ids.isEmpty()) return List.of();
         String placeholders = String.join(",", ids.stream().map(id -> "?").toList());
-        return jdbc.query("SELECT id, name, description, color, project_id, created_at FROM tags WHERE id IN (" + placeholders + ")", ROW_MAPPER, ids.toArray());
+        List<Object> args = new java.util.ArrayList<>(ids);
+        args.add(projectId);
+        return jdbc.query("SELECT id, name, description, color, project_id, created_at FROM tags WHERE id IN ("
+            + placeholders + ") AND project_id = ?", ROW_MAPPER, args.toArray());
     }
 
     public void deleteByProjectId(Integer projectId) {

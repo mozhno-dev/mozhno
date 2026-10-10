@@ -2,11 +2,9 @@ package dev.mozhno.auth;
 
 import dev.mozhno.events.DomainEvent;
 import dev.mozhno.events.DomainEventPublisher;
-import dev.mozhno.environments.Environment;
-import dev.mozhno.environments.EnvironmentRepository;
 import dev.mozhno.mail.EmailTemplateService;
+import dev.mozhno.projects.DefaultProjectFactory;
 import dev.mozhno.projects.Project;
-import dev.mozhno.projects.ProjectRepository;
 import dev.mozhno.spi.NotificationSpi;
 import dev.mozhno.spi.QuotaSpi;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,10 +50,7 @@ class UserInviteServiceTest {
     private QuotaSpi quotaSpi;
 
     @Mock
-    private ProjectRepository projectRepository;
-
-    @Mock
-    private EnvironmentRepository environmentRepository;
+    private DefaultProjectFactory projectFactory;
 
     @org.mockito.Spy
     private AuthProperties authProperties = new AuthProperties();
@@ -68,12 +63,11 @@ class UserInviteServiceTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(projectRepository.save(any(Project.class))).thenAnswer(inv -> {
-            Project p = inv.getArgument(0);
+        lenient().when(projectFactory.createProject(any(), any())).thenAnswer(inv -> {
+            Project p = new Project();
             p.setId(1);
             return p;
         });
-        lenient().when(environmentRepository.save(any(Environment.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private InviteUserRequest createRequest(String email, String role) {
@@ -96,8 +90,12 @@ class UserInviteServiceTest {
 
     @Test
     void inviteUser_quotaBlocked_shouldThrow() {
+        User inviter = new User();
+        inviter.setId(1);
+        inviter.setProjectId(7);
+        when(userRepository.findById(1)).thenReturn(inviter);
         when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
-        when(quotaSpi.canCreateUser(null)).thenReturn(new QuotaSpi.Blocked("users", 10, 10, "Free"));
+        when(quotaSpi.canCreateUser(7)).thenReturn(new QuotaSpi.Blocked("users", 10, 10, "Free"));
 
         assertThatThrownBy(() -> userInviteService.inviteUser(
             createRequest("new@example.com", "developer"), 1))
@@ -107,8 +105,12 @@ class UserInviteServiceTest {
 
     @Test
     void inviteUser_success_shouldStoreTokenAndSendEmail() {
+        User inviter = new User();
+        inviter.setId(42);
+        inviter.setProjectId(7);
+        when(userRepository.findById(42)).thenReturn(inviter);
         when(userRepository.existsByEmail("invitee@example.com")).thenReturn(false);
-        when(quotaSpi.canCreateUser(null)).thenReturn(new QuotaSpi.Allowed());
+        when(quotaSpi.canCreateUser(7)).thenReturn(new QuotaSpi.Allowed());
         when(emailTemplateService.renderInviteEmail(anyString(), anyString())).thenReturn(new EmailTemplateService.EmailTemplate("Приглашение в можно", "<html>invite</html>"));
         when(tokenRepository.save(any(InviteToken.class))).thenAnswer(inv -> {
             InviteToken t = inv.getArgument(0);
@@ -136,6 +138,7 @@ class UserInviteServiceTest {
         assertThat(event.subject()).isEqualTo("Приглашение в можно");
         assertThat(event.body()).isEqualTo("<html>invite</html>");
 
+        verify(quotaSpi).canCreateUser(7);
         verify(events).publish(any(DomainEvent.class));
     }
 
@@ -268,7 +271,9 @@ class UserInviteServiceTest {
         assertThat(saved.getStatus()).isEqualTo("active");
         assertThat(saved.getLocale()).isEqualTo("en");
         assertThat(saved.getCreatedBy()).isEqualTo(42);
+        assertThat(saved.getProjectId()).isEqualTo(1);
 
+        verify(projectFactory).createProject(null, "");
         verify(tokenRepository).markUsed(10);
         verify(events).publish(any(DomainEvent.class));
     }

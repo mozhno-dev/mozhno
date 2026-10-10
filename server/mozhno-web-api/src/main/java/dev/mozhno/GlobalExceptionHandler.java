@@ -6,6 +6,7 @@ import dev.mozhno.exception.ForbiddenException;
 import dev.mozhno.exception.MozhnoException;
 import dev.mozhno.exception.NotFoundException;
 import dev.mozhno.exception.QuotaExceededException;
+import dev.mozhno.mail.MailDeliveryException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,6 +124,16 @@ public class GlobalExceptionHandler {
         body.put("code", "UPLOAD_SIZE_EXCEEDED");
         putTraceId(body);
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(body);
+    }
+
+    @ExceptionHandler(MailDeliveryException.class)
+    public ResponseEntity<Map<String, Object>> handleMailDelivery(MailDeliveryException ex) {
+        log.error("Mail delivery failed", ex);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", "Could not send the email");
+        body.put("code", "MAIL_DELIVERY_FAILED");
+        putTraceId(body);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
     @ExceptionHandler(MultipartException.class)

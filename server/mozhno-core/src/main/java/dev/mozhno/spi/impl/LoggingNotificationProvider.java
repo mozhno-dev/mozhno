@@ -2,20 +2,17 @@ package dev.mozhno.spi.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Component;
 import dev.mozhno.spi.NotificationSpi;
 
 /**
- * Default {@link NotificationSpi} implementation that writes notification
+ * Fallback {@link NotificationSpi} implementation that writes notification
  * events to the application log via SLF4J instead of delivering them through
  * external channels.
  *
- * <p>Active when no {@link JavaMailSender} is available (i.e. no SMTP configured).
+ * <p>Registered by {@link NotificationProviderAutoConfiguration} when no
+ * {@link JavaMailSender} is available (i.e. no SMTP configured).
  */
-@Component
-@ConditionalOnMissingBean(JavaMailSender.class)
 public class LoggingNotificationProvider implements NotificationSpi {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingNotificationProvider.class);

@@ -146,6 +146,39 @@ class FlagMetricsControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void getFlagMetrics_shouldReturn404ForFlagInAnotherProject() throws Exception {
+        Integer foreignFlagId = createForeignFlag("foreign-metrics-flag");
+
+        mockMvc.perform(get("/api/v1/flags/{flagId}/metrics", foreignFlagId)
+                .param("environmentId", envId.toString())
+                .header("Authorization", auth()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getContributors_shouldReturn404ForFlagInAnotherProject() throws Exception {
+        Integer foreignFlagId = createForeignFlag("foreign-contrib-flag");
+
+        mockMvc.perform(get("/api/v1/flags/{flagId}/metrics/contributors", foreignFlagId)
+                .param("environmentId", envId.toString())
+                .header("Authorization", auth()))
+            .andExpect(status().isNotFound());
+    }
+
+    private Integer createForeignFlag(String key) {
+        Project other = new Project();
+        other.setName("Foreign Metrics Project");
+        Integer otherProjectId = projectRepository.save(other).getId();
+
+        Flag flag = new Flag();
+        flag.setProjectId(otherProjectId);
+        flag.setName(key);
+        flag.setKey(key);
+        flag.setFlagType(FlagType.RELEASE);
+        return flagRepository.save(flag).getId();
+    }
+
+    @Test
     void getAppFlagUsage_empty_shouldReturnEmptyFlagsWithTotal() throws Exception {
         createFlag("usage-empty-flag");
 

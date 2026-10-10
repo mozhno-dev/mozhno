@@ -129,6 +129,15 @@ describe('getErrorMessage', () => {
     expect(msg).toBe('HTTP 500 Internal Error');
   });
 
+  it('maps MAIL_DELIVERY_FAILED server code to localized message', () => {
+    const err = new AppError('Could not send the email', 'SERVER', 500, {
+      error: 'Could not send the email',
+      code: 'MAIL_DELIVERY_FAILED',
+    });
+    const msg = getErrorMessage(err);
+    expect(msg).toBe('Не удалось отправить письмо. Проверьте настройки почты и попробуйте снова.');
+  });
+
   it('returns String for non-error values', () => {
     expect(getErrorMessage('str')).toBe('str');
     expect(getErrorMessage(42)).toBe('42');

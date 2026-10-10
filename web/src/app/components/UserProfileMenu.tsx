@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Camera, LogOut, ChevronDown, Loader2, Globe } from '@/shared/icons';
 import { useAuth } from '@/app/auth/useAuth';
 import { api } from '@/api';
+import { useAuthedImage } from '@/app/hooks/queries';
 import { useLocale, useT } from '@/i18n';
 import { getErrorMessage } from '@/shared';
 import {
@@ -33,8 +34,9 @@ export function UserProfileMenu() {
         .toUpperCase()
     : (user?.email?.charAt(0).toUpperCase() ?? '?');
 
-  const avatarUrl = user ? `${api.users.getAvatarUrl(user.id)}?v=${avatarVersion}` : undefined;
+  const avatarPath = user ? `${api.users.getAvatarUrl(user.id)}?v=${avatarVersion}` : null;
   const hasAvatar = !!(user && user.avatar);
+  const avatarUrl = useAuthedImage(hasAvatar ? avatarPath : null);
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,7 +98,7 @@ export function UserProfileMenu() {
           aria-label={t('common.openUserMenu')}
         >
           <Avatar className="w-8 h-8 ring-2 ring-background dark:ring-border shadow-sm">
-            <AvatarImage src={hasAvatar ? avatarUrl : undefined} alt={user?.name ?? ''} />
+            <AvatarImage src={avatarUrl ?? undefined} alt={user?.name ?? ''} />
             <AvatarFallback className="bg-brand text-caption font-bold text-primary-foreground">
               {initials}
             </AvatarFallback>
@@ -111,7 +113,7 @@ export function UserProfileMenu() {
       <DropdownMenuContent align="end" className="w-64 p-2">
         <div className="flex items-center gap-3 px-2 py-2">
           <Avatar className="w-12 h-12 ring-2 ring-border dark:ring-border shadow-sm">
-            <AvatarImage src={hasAvatar ? avatarUrl : undefined} alt={user?.name ?? ''} />
+            <AvatarImage src={avatarUrl ?? undefined} alt={user?.name ?? ''} />
             <AvatarFallback className="bg-brand text-body-sm font-bold text-primary-foreground">
               {initials}
             </AvatarFallback>

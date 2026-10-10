@@ -130,7 +130,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/accept-invite").permitAll()
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/projects/logo").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/v1/users/*/avatar").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/users/*/avatar").authenticated()
                 .requestMatchers("/api/v1/**").hasAnyRole("ADMIN", "DEVELOPER", "VIEWER")
                 .requestMatchers("/index.html", "/assets/**", "/favicon*", "/logo*.svg", "/manifest.json").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

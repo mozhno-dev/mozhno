@@ -43,7 +43,7 @@ class FlagMetricsServiceTest extends BaseIntegrationTest {
 
     @Test
     void getMetrics_empty_shouldReturnEmpty() {
-        List<FlagMetric> result = flagMetricsService.getMetrics(1, envId);
+        List<FlagMetric> result = flagMetricsService.getMetrics(projectId, 1, envId);
         assertThat(result).isEmpty();
     }
 
@@ -71,10 +71,29 @@ class FlagMetricsServiceTest extends BaseIntegrationTest {
         flagMetricRepository.recordEvaluation(projectId, saved.getId(), envId, true, null);
         flagMetricRepository.recordEvaluation(projectId, saved.getId(), envId, false, null);
 
-        List<FlagMetric> result = flagMetricsService.getMetrics(saved.getId(), envId);
+        List<FlagMetric> result = flagMetricsService.getMetrics(projectId, saved.getId(), envId);
         assertThat(result).isNotEmpty();
         assertThat(result.get(0).getEvaluationTrueCount()).isGreaterThanOrEqualTo(1);
         assertThat(result.get(0).getEvaluationFalseCount()).isGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void getMetrics_shouldNotReturnMetricsOfAnotherProject() {
+        Flag flag = new Flag();
+        flag.setProjectId(projectId);
+        flag.setName("Isolated Flag");
+        flag.setKey("isolated-flag");
+        flag.setFlagType(FlagType.RELEASE);
+        Flag saved = flagRepository.save(flag);
+
+        flagMetricRepository.recordEvaluation(projectId, saved.getId(), envId, true, null);
+
+        Project other = new Project();
+        other.setName("Other Metrics Project");
+        Integer otherProjectId = projectRepository.save(other).getId();
+
+        List<FlagMetric> result = flagMetricsService.getMetrics(otherProjectId, saved.getId(), envId);
+        assertThat(result).isEmpty();
     }
 
     @Test

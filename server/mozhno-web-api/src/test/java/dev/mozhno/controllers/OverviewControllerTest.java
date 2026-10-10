@@ -61,7 +61,7 @@ class OverviewControllerTest extends BaseIntegrationTest {
         jdbcTemplate.update("UPDATE users SET project_id = ? WHERE email = ?", projectId, email);
         String res = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"password\":\"secret\",\"projectId\":" + projectId + "}"))
+                .content("{\"email\":\"" + email + "\",\"password\":\"secret\"}"))
             .andExpect(status().isOk())
             .andReturn().getResponse().getContentAsString();
         return "Bearer " + objectMapper.readTree(res).get("token").asText();

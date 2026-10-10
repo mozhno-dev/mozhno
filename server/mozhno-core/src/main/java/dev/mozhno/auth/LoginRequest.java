@@ -21,8 +21,5 @@ public record LoginRequest(
     String provider,
 
     @Schema(description = "Additional provider-specific parameters", nullable = true)
-    Map<String, String> params,
-
-    @Schema(description = "Optional project ID to include in the JWT claim", nullable = true)
-    Integer projectId
+    Map<String, String> params
 ) {}

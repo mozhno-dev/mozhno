@@ -16,6 +16,7 @@ import dev.mozhno.contexts.ContextDefinition;
 import dev.mozhno.projects.Project;
 
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -70,7 +71,7 @@ class RbacIntegrationTest extends BaseIntegrationTest {
         jdbcTemplate.update("UPDATE users SET project_id = ? WHERE email = ?", projectId, email);
         return mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\",\"password\":\"Admin1!\",\"projectId\":" + projectId + "}"))
+                        .content("{\"email\":\"" + email + "\",\"password\":\"Admin1!\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
     }
@@ -140,6 +141,41 @@ class RbacIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(delete("/api/v1/users/{id}", id)
                         .header("Authorization", adminAuth()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("ADMIN: cannot access users of another project (404)")
+    void adminCannotAccessUsersOfAnotherProject() throws Exception {
+        Project other = new Project();
+        other.setName("Other Project");
+        Integer otherProjectId = projectRepository.save(other).getId();
+
+        jdbcTemplate.update(
+                "INSERT INTO users (email, password_hash, role, status, project_id) VALUES (?, ?, ?, ?, ?)",
+                "foreign-user@test.com", passwordEncoder.encode("Foreign1!"), "viewer", "active", otherProjectId);
+        int foreignId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE email = ?", Integer.class, "foreign-user@test.com");
+
+        mockMvc.perform(get("/api/v1/users/{id}", foreignId)
+                        .header("Authorization", adminAuth()))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(put("/api/v1/users/{id}", foreignId)
+                        .header("Authorization", adminAuth())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"role\":\"admin\"}"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(delete("/api/v1/users/{id}", foreignId)
+                        .header("Authorization", adminAuth()))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/api/v1/users/{id}/send-reset-link", foreignId)
+                        .header("Authorization", adminAuth()))
+                .andExpect(status().isNotFound());
+
+        assertEquals("viewer", jdbcTemplate.queryForObject(
+                "SELECT role FROM users WHERE id = ?", String.class, foreignId));
     }
 
     // ──────────────────────────────────────────────
@@ -343,7 +379,7 @@ class RbacIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"locked@test.com\",\"password\":\"LockPass1!\",\"projectId\":" + projectId + "}"))
+                        .content("{\"email\":\"locked@test.com\",\"password\":\"LockPass1!\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -389,7 +425,7 @@ class RbacIntegrationTest extends BaseIntegrationTest {
 
         String loginResp = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"pwdchange@test.com\",\"password\":\"PwdOld1!\",\"projectId\":" + projectId + "}"))
+                        .content("{\"email\":\"pwdchange@test.com\",\"password\":\"PwdOld1!\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String rt = objectMapper.readTree(loginResp).get("refreshToken").asText();
@@ -425,7 +461,7 @@ class RbacIntegrationTest extends BaseIntegrationTest {
 
         String loginResp = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"reuse@test.com\",\"password\":\"ReusePass1!\",\"projectId\":" + projectId + "}"))
+                        .content("{\"email\":\"reuse@test.com\",\"password\":\"ReusePass1!\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         String rt = objectMapper.readTree(loginResp).get("refreshToken").asText();
@@ -463,7 +499,7 @@ class RbacIntegrationTest extends BaseIntegrationTest {
     private String loginAndReturnRawForUser(String email, String password) throws Exception {
         return mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\",\"projectId\":" + projectId + "}"))
+                        .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
     }

@@ -106,9 +106,10 @@ public class PasswordResetService {
     }
 
     @Transactional
-    public void sendAdminResetEmail(Integer userId) {
+    public void sendAdminResetEmail(Integer userId, Integer projectId) {
         User user = userRepository.findById(userId);
-        if (user == null || "suspended".equals(user.getStatus())) {
+        if (user == null || "suspended".equals(user.getStatus())
+            || user.getProjectId() == null || !user.getProjectId().equals(projectId)) {
             throw new NotFoundException("User", userId);
         }
 

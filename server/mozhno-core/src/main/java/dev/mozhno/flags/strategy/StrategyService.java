@@ -95,45 +95,36 @@ public class StrategyService {
     }
 
     /**
-     * Deletes a strategy by its ID.
+     * Deletes a strategy by its ID within the given flag and project.
      *
      * @param id the strategy ID
+     * @param flagId the flag the strategy must belong to
+     * @param projectId the owning project ID
      */
     @Transactional
     @CacheEvict(value = CacheNames.CLIENT_FLAGS, allEntries = true)
-    public void delete(Integer id, Integer flagId) {
-        FlagStrategy existing;
-        if (flagId != null) {
-            existing = strategyRepository.findByIdAndFlagId(id, flagId);
-        } else {
-            existing = strategyRepository.findById(id);
-        }
+    public void delete(Integer id, Integer flagId, Integer projectId) {
+        requireFlagInProject(flagId, projectId);
+        FlagStrategy existing = strategyRepository.findByIdAndFlagId(id, flagId);
         if (existing == null) throw new NotFoundException("Strategy", id);
         strategyRepository.deleteById(id);
     }
 
-    @Transactional
-    public void delete(Integer id) {
-        delete(id, null);
-    }
-
     /**
-     * Updates an existing strategy by its ID.
+     * Updates an existing strategy by its ID within the given flag and project.
      *
      * @param id the strategy ID
      * @param request the strategy update request
+     * @param flagId the flag the strategy must belong to
+     * @param projectId the owning project ID
      * @return the updated strategy
-     * @throws RuntimeException if the strategy is not found
+     * @throws RuntimeException if the flag or the strategy is not found
      */
     @Transactional
     @CacheEvict(value = CacheNames.CLIENT_FLAGS, allEntries = true)
-    public FlagStrategy update(Integer id, StrategyRequest request, Integer flagId) {
-        FlagStrategy existing;
-        if (flagId != null) {
-            existing = strategyRepository.findByIdAndFlagId(id, flagId);
-        } else {
-            existing = strategyRepository.findById(id);
-        }
+    public FlagStrategy update(Integer id, StrategyRequest request, Integer flagId, Integer projectId) {
+        requireFlagInProject(flagId, projectId);
+        FlagStrategy existing = strategyRepository.findByIdAndFlagId(id, flagId);
         if (existing == null) throw new NotFoundException("Strategy", id);
 
         validateConstraintValues(request.getContextValuesJson());
@@ -158,9 +149,10 @@ public class StrategyService {
         return saved;
     }
 
-    @Transactional
-    public FlagStrategy update(Integer id, StrategyRequest request) {
-        return update(id, request, null);
+    private void requireFlagInProject(Integer flagId, Integer projectId) {
+        if (flagRepository.findByIdAndProjectId(flagId, projectId) == null) {
+            throw new NotFoundException("Flag", flagId);
+        }
     }
 
     /**

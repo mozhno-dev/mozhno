@@ -34,7 +34,7 @@ public class AuthController {
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         boolean rememberMe = request.rememberMe() != null && request.rememberMe();
         return authService.login(request.email(), request.password(),
-            request.provider(), request.params(), rememberMe, request.projectId());
+            request.provider(), request.params(), rememberMe);
     }
 
     @PostMapping("/refresh")

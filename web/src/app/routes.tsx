@@ -10,6 +10,7 @@ import { AuthProvider } from '@/app/auth/AuthContext';
 import { AppSidebarProvider } from '@/app/components/AppSidebar';
 import { LazyPage } from '@/shared/components/LazyPage';
 import { PremiumPageSlot } from '@/app/components/PremiumPageSlot';
+import { PluginSlot } from '@/app/components/PluginSlot';
 
 const Flags = lazy(() => import('@/app/components/Flags').then((m) => ({ default: m.Flags })));
 const Overview = lazy(() =>
@@ -69,6 +70,18 @@ export const router = createBrowserRouter([
       {
         path: '/accept-invite',
         Component: AcceptInvite,
+      },
+      {
+        path: '/signup',
+        element: <PluginSlot slotId="page.signup" />,
+      },
+      {
+        path: '/confirm-email',
+        element: <PluginSlot slotId="page.confirmEmail" />,
+      },
+      {
+        path: '/oauth/callback',
+        element: <PluginSlot slotId="page.oauthCallback" />,
       },
       {
         element: <ProtectedRoute />,

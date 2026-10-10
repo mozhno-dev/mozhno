@@ -112,19 +112,41 @@ class TagRepositoryTest extends BaseIntegrationTest {
         t2.setProjectId(projectId);
         Tag s2 = tagRepository.save(t2);
 
-        List<Tag> result = tagRepository.findAllByIds(List.of(s1.getId(), s2.getId()));
+        List<Tag> result = tagRepository.findAllByIds(List.of(s1.getId(), s2.getId()), projectId);
         assertEquals(2, result.size());
     }
 
     @Test
+    void findAllByIds_shouldExcludeTagsOfAnotherProject() {
+        Integer projectId = createProject();
+        Integer otherProjectId = createProject();
+        Tag own = new Tag();
+        own.setName("own");
+        own.setColor("#111");
+        own.setProjectId(projectId);
+        Tag savedOwn = tagRepository.save(own);
+        Tag foreign = new Tag();
+        foreign.setName("foreign");
+        foreign.setColor("#222");
+        foreign.setProjectId(otherProjectId);
+        Tag savedForeign = tagRepository.save(foreign);
+
+        List<Tag> result = tagRepository.findAllByIds(
+            List.of(savedOwn.getId(), savedForeign.getId()), projectId);
+
+        assertEquals(1, result.size());
+        assertEquals(savedOwn.getId(), result.get(0).getId());
+    }
+
+    @Test
     void findAllByIds_shouldReturnEmptyForEmptyList() {
-        List<Tag> result = tagRepository.findAllByIds(List.of());
+        List<Tag> result = tagRepository.findAllByIds(List.of(), createProject());
         assertTrue(result.isEmpty());
     }
 
     @Test
     void findAllByIds_shouldReturnEmptyForNull() {
-        List<Tag> result = tagRepository.findAllByIds(null);
+        List<Tag> result = tagRepository.findAllByIds(null, createProject());
         assertTrue(result.isEmpty());
     }
 }

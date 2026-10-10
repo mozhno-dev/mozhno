@@ -25,7 +25,8 @@ import {
   russianPlural,
 } from '@/shared';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
+import { AuthedAvatarImage } from '@/app/components/AuthedAvatarImage';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -712,7 +713,7 @@ function ActivityFeed({ t, events }: { t: TFn; events: AuditEvent[] }) {
               <span className={`size-1.5 rounded-full shrink-0 ${actionTone(e.action)}`} aria-hidden="true" />
               <Avatar className="w-7 h-7 shrink-0">
                 {e.userId ? (
-                  <AvatarImage src={api.users.getAvatarUrl(e.userId)} alt={e.userName ?? ''} />
+                  <AuthedAvatarImage src={api.users.getAvatarUrl(e.userId)} alt={e.userName ?? ''} />
                 ) : null}
                 <AvatarFallback
                   className="text-caption font-semibold text-primary-foreground"

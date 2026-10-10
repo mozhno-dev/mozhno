@@ -54,7 +54,7 @@ public class StrategyController {
     public void delete(@PathVariable Integer flagId,
                        @PathVariable Integer id,
                        @AuthenticationPrincipal UserPrincipal user) {
-        strategyService.delete(id, flagId);
+        strategyService.delete(id, flagId, user.projectId());
     }
 
     @PutMapping("/{id}")
@@ -64,7 +64,7 @@ public class StrategyController {
                                        @PathVariable Integer id,
                                        @Valid @RequestBody StrategyRequest request,
                                        @AuthenticationPrincipal UserPrincipal user) {
-        FlagStrategy strategy = strategyService.update(id, request, flagId);
+        FlagStrategy strategy = strategyService.update(id, request, flagId, user.projectId());
         return strategyAssembler.toResponse(strategy);
     }
 

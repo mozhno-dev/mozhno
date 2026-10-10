@@ -47,7 +47,7 @@ class EnvironmentControllerTest extends BaseIntegrationTest {
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"env-test@test.com\",\"password\":\"secret\",\"projectId\":" + projectId + "}"))
+                .content("{\"email\":\"env-test@test.com\",\"password\":\"secret\"}"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 

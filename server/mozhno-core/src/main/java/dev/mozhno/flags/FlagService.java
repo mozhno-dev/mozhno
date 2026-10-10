@@ -184,7 +184,7 @@ public class FlagService {
             if (request.getTags().size() > flagsProperties.getMaxTagsPerFlag()) {
                 throw new BadRequestException("At most " + flagsProperties.getMaxTagsPerFlag() + " tags per flag");
             }
-            validateTagIds(request.getTags());
+            validateTagIds(request.getTags(), request.getProjectId());
             flagTagValueRepository.saveBatch(flag.getId(), request.getTags());
         }
 
@@ -228,7 +228,7 @@ public class FlagService {
             if (request.getTags().size() > flagsProperties.getMaxTagsPerFlag()) {
                 throw new BadRequestException("At most " + flagsProperties.getMaxTagsPerFlag() + " tags per flag");
             }
-            validateTagIds(request.getTags());
+            validateTagIds(request.getTags(), request.getProjectId());
             flagTagValueRepository.saveBatch(id, request.getTags());
         }
 
@@ -276,9 +276,9 @@ public class FlagService {
         return flag;
     }
 
-    private void validateTagIds(List<FlagRequest.TagValue> tags) {
+    private void validateTagIds(List<FlagRequest.TagValue> tags, Integer projectId) {
         List<Integer> tagIds = tags.stream().map(FlagRequest.TagValue::getTagId).distinct().toList();
-        List<Tag> found = tagRepository.findAllByIds(tagIds);
+        List<Tag> found = tagRepository.findAllByIds(tagIds, projectId);
         if (found.size() != tagIds.size()) {
             Set<Integer> foundIds = found.stream().map(Tag::getId).collect(Collectors.toSet());
             for (Integer tagId : tagIds) {

@@ -109,12 +109,13 @@ public class FlagMetricRepository {
     /**
      * Returns aggregated metrics (summed across all instances) for a specific flag and environment since the given time.
      *
+     * @param projectId the owning project ID
      * @param flagId the flag ID
      * @param environmentId the environment ID
      * @param since the start time for the query range
      * @return list of hourly metrics
      */
-    public List<FlagMetric> findByFlagIdAndEnvironmentId(Integer flagId, Integer environmentId, Instant since) {
+    public List<FlagMetric> findByFlagIdAndEnvironmentId(Integer projectId, Integer flagId, Integer environmentId, Instant since) {
         String sql = """
             SELECT
               MAX(id) AS id,
@@ -127,30 +128,30 @@ public class FlagMetricRepository {
               time_bucket,
               MAX(created_at) AS created_at
             FROM flag_metrics
-            WHERE flag_id = ? AND environment_id = ? AND time_bucket >= ?
+            WHERE project_id = ? AND flag_id = ? AND environment_id = ? AND time_bucket >= ?
             GROUP BY flag_id, environment_id, time_bucket
             ORDER BY time_bucket ASC
             """;
-        return jdbc.query(sql, rowMapper(), flagId, environmentId, Timestamp.from(since));
+        return jdbc.query(sql, rowMapper(), projectId, flagId, environmentId, Timestamp.from(since));
     }
 
     /**
      * Returns per-instance metrics for a specific flag, environment, and client instance.
      */
-    public List<FlagMetric> findByFlagIdAndEnvironmentIdAndInstanceId(Integer flagId, Integer environmentId, Long instanceId, Instant since) {
+    public List<FlagMetric> findByFlagIdAndEnvironmentIdAndInstanceId(Integer projectId, Integer flagId, Integer environmentId, Long instanceId, Instant since) {
         String sql = """
             SELECT id, project_id, flag_id, environment_id, evaluation_true_count, evaluation_false_count, client_instance_id, time_bucket, created_at
             FROM flag_metrics
-            WHERE flag_id = ? AND environment_id = ? AND client_instance_id = ? AND time_bucket >= ?
+            WHERE project_id = ? AND flag_id = ? AND environment_id = ? AND client_instance_id = ? AND time_bucket >= ?
             ORDER BY time_bucket ASC
             """;
-        return jdbc.query(sql, rowMapper(), flagId, environmentId, instanceId, Timestamp.from(since));
+        return jdbc.query(sql, rowMapper(), projectId, flagId, environmentId, instanceId, Timestamp.from(since));
     }
 
     /**
      * Returns per-app metrics aggregated across all instances of the given app_name.
      */
-    public List<FlagMetric> findByFlagIdAndEnvironmentIdAndAppName(Integer flagId, Integer environmentId, String appName, Instant since) {
+    public List<FlagMetric> findByFlagIdAndEnvironmentIdAndAppName(Integer projectId, Integer flagId, Integer environmentId, String appName, Instant since) {
         String sql = """
             SELECT
               MAX(fm.id) AS id,
@@ -164,23 +165,24 @@ public class FlagMetricRepository {
               MAX(fm.created_at) AS created_at
             FROM flag_metrics fm
             JOIN client_instances ci ON fm.client_instance_id = ci.id
-            WHERE fm.flag_id = ? AND fm.environment_id = ? AND ci.app_name = ? AND fm.time_bucket >= ?
+            WHERE fm.project_id = ? AND fm.flag_id = ? AND fm.environment_id = ? AND ci.app_name = ? AND fm.time_bucket >= ?
             GROUP BY fm.flag_id, fm.environment_id, fm.time_bucket
             ORDER BY fm.time_bucket ASC
             """;
-        return jdbc.query(sql, rowMapper(), flagId, environmentId, appName, Timestamp.from(since));
+        return jdbc.query(sql, rowMapper(), projectId, flagId, environmentId, appName, Timestamp.from(since));
     }
 
     /**
      * Returns per-instance contributor summaries for a specific flag and environment since the given time.
      * Only rows with a client instance are included; aggregated rows (client_instance_id IS NULL) are ignored.
      *
+     * @param projectId the owning project ID
      * @param flagId the flag ID
      * @param environmentId the environment ID
      * @param since the start time for the query range
      * @return list of contributors ordered by total contribution descending
      */
-    public List<FlagContributor> findContributors(Integer flagId, Integer environmentId, Instant since) {
+    public List<FlagContributor> findContributors(Integer projectId, Integer flagId, Integer environmentId, Instant since) {
         String sql = """
             SELECT fm.client_instance_id AS instance_id,
                    ci.instance_id AS sdk_instance_id,
@@ -189,11 +191,11 @@ public class FlagMetricRepository {
                    SUM(fm.evaluation_false_count) AS evaluation_false_count
             FROM flag_metrics fm
             JOIN client_instances ci ON ci.id = fm.client_instance_id
-            WHERE fm.flag_id = ? AND fm.environment_id = ? AND fm.time_bucket >= ?
+            WHERE fm.project_id = ? AND fm.flag_id = ? AND fm.environment_id = ? AND fm.time_bucket >= ?
             GROUP BY fm.client_instance_id, ci.instance_id, ci.app_name, ci.app_type, ci.sdk_version, ci.last_seen_at
             ORDER BY (SUM(fm.evaluation_true_count) + SUM(fm.evaluation_false_count)) DESC
             """;
-        return jdbc.query(sql, contributorRowMapper(), flagId, environmentId, Timestamp.from(since));
+        return jdbc.query(sql, contributorRowMapper(), projectId, flagId, environmentId, Timestamp.from(since));
     }
 
     /**

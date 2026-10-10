@@ -1,6 +1,15 @@
 import React from 'react';
 
-export const PLUGIN_SLOTS = ['sidebar.admin', 'settings.premium', 'page.premium'] as const;
+export const PLUGIN_SLOTS = [
+  'sidebar.admin',
+  'settings.premium',
+  'page.premium',
+  'auth.social',
+  'auth.signup',
+  'page.signup',
+  'page.confirmEmail',
+  'page.oauthCallback',
+] as const;
 
 export type PluginSlotId = (typeof PLUGIN_SLOTS)[number];
 

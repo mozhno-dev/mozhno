@@ -37,41 +37,43 @@ public class FlagMetricsService {
     /**
      * Returns aggregated metrics for a specific flag and environment over the last 48 hours.
      *
+     * @param projectId the owning project ID
      * @param flagId the flag ID
      * @param environmentId the environment ID
      * @return list of hourly metrics
      */
-    public List<FlagMetric> getMetrics(Integer flagId, Integer environmentId) {
+    public List<FlagMetric> getMetrics(Integer projectId, Integer flagId, Integer environmentId) {
         Instant since = Instant.now().minus(48, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
-        return flagMetricRepository.findByFlagIdAndEnvironmentId(flagId, environmentId, since);
+        return flagMetricRepository.findByFlagIdAndEnvironmentId(projectId, flagId, environmentId, since);
     }
 
     /**
      * Returns per-instance metrics for a specific flag, environment, and client instance.
      */
-    public List<FlagMetric> getMetricsByInstance(Integer flagId, Integer environmentId, Long instanceId) {
+    public List<FlagMetric> getMetricsByInstance(Integer projectId, Integer flagId, Integer environmentId, Long instanceId) {
         Instant since = Instant.now().minus(48, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
-        return flagMetricRepository.findByFlagIdAndEnvironmentIdAndInstanceId(flagId, environmentId, instanceId, since);
+        return flagMetricRepository.findByFlagIdAndEnvironmentIdAndInstanceId(projectId, flagId, environmentId, instanceId, since);
     }
 
     /**
      * Returns per-app metrics for a specific flag and environment, filtered by app_name.
      */
-    public List<FlagMetric> getMetricsByAppName(Integer flagId, Integer environmentId, String appName) {
+    public List<FlagMetric> getMetricsByAppName(Integer projectId, Integer flagId, Integer environmentId, String appName) {
         Instant since = Instant.now().minus(48, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
-        return flagMetricRepository.findByFlagIdAndEnvironmentIdAndAppName(flagId, environmentId, appName, since);
+        return flagMetricRepository.findByFlagIdAndEnvironmentIdAndAppName(projectId, flagId, environmentId, appName, since);
     }
 
     /**
      * Returns per-instance contributor summaries for a specific flag and environment over the last 48 hours.
      *
+     * @param projectId the owning project ID
      * @param flagId the flag ID
      * @param environmentId the environment ID
      * @return list of contributors ordered by total contribution descending
      */
-    public List<FlagContributor> getContributors(Integer flagId, Integer environmentId) {
+    public List<FlagContributor> getContributors(Integer projectId, Integer flagId, Integer environmentId) {
         Instant since = Instant.now().minus(48, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
-        return flagMetricRepository.findContributors(flagId, environmentId, since);
+        return flagMetricRepository.findContributors(projectId, flagId, environmentId, since);
     }
 
     /**

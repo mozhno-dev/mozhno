@@ -204,7 +204,7 @@ public class OverviewService {
             !environments.isEmpty(),
             hasApiKey,
             !instances.isEmpty(),
-            userRepository.count() > 1
+            userRepository.countByProjectId(projectId) > 1
         );
     }
 

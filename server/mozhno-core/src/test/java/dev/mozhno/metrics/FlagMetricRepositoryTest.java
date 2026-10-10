@@ -58,7 +58,7 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
     @Test
     void findContributors_empty_shouldReturnEmpty() {
         Flag flag = createFlag("empty-flag");
-        List<FlagContributor> result = repository.findContributors(flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> result = repository.findContributors(projectId, flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(result).isEmpty();
     }
 
@@ -71,7 +71,7 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
         repository.recordEvaluation(projectId, flag.getId(), envId, true, instanceId);
         repository.recordEvaluation(projectId, flag.getId(), envId, false, instanceId);
 
-        List<FlagContributor> result = repository.findContributors(flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> result = repository.findContributors(projectId, flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(result).hasSize(1);
         FlagContributor c = result.get(0);
         assertThat(c.instanceId()).isEqualTo(instanceId);
@@ -96,7 +96,7 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
             VALUES (?, ?, ?, ?, ?, NOW() - INTERVAL '3 hours', ?)
             """, projectId, flag.getId(), envId, 100, 50, instanceId);
 
-        List<FlagContributor> result = repository.findContributors(flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> result = repository.findContributors(projectId, flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(result).hasSize(1);
         assertThat(result.get(0).evaluationTrueCount()).isEqualTo(101);
         assertThat(result.get(0).evaluationFalseCount()).isEqualTo(50);
@@ -117,14 +117,14 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
         repository.recordEvaluation(projectId, flagB.getId(), envId, true, instanceId);
         repository.recordEvaluation(projectId, flagA.getId(), env2Id, true, instanceId);
 
-        List<FlagContributor> forFlagA = repository.findContributors(flagA.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> forFlagA = repository.findContributors(projectId, flagA.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(forFlagA).hasSize(1);
         assertThat(forFlagA.get(0).evaluationTrueCount()).isEqualTo(1);
 
-        List<FlagContributor> forFlagB = repository.findContributors(flagB.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> forFlagB = repository.findContributors(projectId, flagB.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(forFlagB).hasSize(1);
 
-        List<FlagContributor> forEnv2 = repository.findContributors(flagA.getId(), env2Id, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> forEnv2 = repository.findContributors(projectId, flagA.getId(), env2Id, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(forEnv2).hasSize(1);
     }
 
@@ -139,7 +139,7 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
         repository.recordEvaluations(projectId, flag.getId(), envId, 40, 40, mid);
         repository.recordEvaluations(projectId, flag.getId(), envId, 5, 0, low);
 
-        List<FlagContributor> result = repository.findContributors(flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> result = repository.findContributors(projectId, flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(result).hasSize(3);
         assertThat(result.get(0).sdkInstanceId()).isEqualTo("inst-top");
         assertThat(result.get(1).sdkInstanceId()).isEqualTo("inst-mid");
@@ -151,7 +151,7 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
         Flag flag = createFlag("agg-flag");
         repository.recordEvaluation(projectId, flag.getId(), envId, true, null);
 
-        List<FlagContributor> result = repository.findContributors(flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> result = repository.findContributors(projectId, flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(result).isEmpty();
     }
 
@@ -166,7 +166,7 @@ class FlagMetricRepositoryTest extends BaseIntegrationTest {
             VALUES (?, ?, ?, ?, ?, NOW() - INTERVAL '100 hours', ?)
             """, projectId, flag.getId(), envId, 100, 0, instanceId);
 
-        List<FlagContributor> result = repository.findContributors(flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
+        List<FlagContributor> result = repository.findContributors(projectId, flag.getId(), envId, Instant.now().minus(48, ChronoUnit.HOURS));
         assertThat(result).hasSize(1);
         assertThat(result.get(0).evaluationTrueCount()).isEqualTo(1);
     }

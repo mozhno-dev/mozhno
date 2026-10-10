@@ -25,13 +25,14 @@ public class FlagMetricsController {
                                                    @RequestParam(required = false) Long instanceId,
                                                    @RequestParam(required = false) String appName,
                                                    @AuthenticationPrincipal UserPrincipal user) {
+        flagService.findById(flagId, user.projectId());
         List<FlagMetric> metrics;
         if (instanceId != null) {
-            metrics = flagMetricsService.getMetricsByInstance(flagId, environmentId, instanceId);
+            metrics = flagMetricsService.getMetricsByInstance(user.projectId(), flagId, environmentId, instanceId);
         } else if (appName != null && !appName.isEmpty()) {
-            metrics = flagMetricsService.getMetricsByAppName(flagId, environmentId, appName);
+            metrics = flagMetricsService.getMetricsByAppName(user.projectId(), flagId, environmentId, appName);
         } else {
-            metrics = flagMetricsService.getMetrics(flagId, environmentId);
+            metrics = flagMetricsService.getMetrics(user.projectId(), flagId, environmentId);
         }
         return metricsAssembler.toResponseList(metrics);
     }
@@ -49,7 +50,9 @@ public class FlagMetricsController {
     public List<FlagContributorResponse> getContributors(@PathVariable Integer flagId,
                                                          @RequestParam Integer environmentId,
                                                          @AuthenticationPrincipal UserPrincipal user) {
-        List<FlagContributor> contributors = flagMetricsService.getContributors(flagId, environmentId);
+        flagService.findById(flagId, user.projectId());
+        List<FlagContributor> contributors = flagMetricsService.getContributors(
+            user.projectId(), flagId, environmentId);
         return metricsAssembler.toContributorResponseList(contributors);
     }
 

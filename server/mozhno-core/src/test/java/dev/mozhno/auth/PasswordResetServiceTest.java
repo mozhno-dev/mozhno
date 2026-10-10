@@ -60,6 +60,7 @@ class PasswordResetServiceTest {
         user.setRole("developer");
         user.setStatus(status);
         user.setLocale("ru");
+        user.setProjectId(1);
         return user;
     }
 
@@ -205,7 +206,7 @@ class PasswordResetServiceTest {
             return t;
         });
 
-        passwordResetService.sendAdminResetEmail(4);
+        passwordResetService.sendAdminResetEmail(4, 1);
 
         ArgumentCaptor<NotificationSpi.NotificationEvent> eventCaptor =
             ArgumentCaptor.forClass(NotificationSpi.NotificationEvent.class);
@@ -223,7 +224,7 @@ class PasswordResetServiceTest {
     void sendAdminResetEmail_userNotFound_shouldThrow() {
         when(userRepository.findById(999)).thenReturn(null);
 
-        assertThatThrownBy(() -> passwordResetService.sendAdminResetEmail(999))
+        assertThatThrownBy(() -> passwordResetService.sendAdminResetEmail(999, 1))
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("User");
     }
@@ -233,9 +234,22 @@ class PasswordResetServiceTest {
         User user = createTestUser(5, "suspended");
         when(userRepository.findById(5)).thenReturn(user);
 
-        assertThatThrownBy(() -> passwordResetService.sendAdminResetEmail(5))
+        assertThatThrownBy(() -> passwordResetService.sendAdminResetEmail(5, 1))
             .isInstanceOf(RuntimeException.class)
             .hasMessageContaining("User");
+    }
+
+    @Test
+    void sendAdminResetEmail_userInAnotherProject_shouldThrow() {
+        User user = createTestUser(7, "active");
+        user.setProjectId(2);
+        when(userRepository.findById(7)).thenReturn(user);
+
+        assertThatThrownBy(() -> passwordResetService.sendAdminResetEmail(7, 1))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("User");
+        verify(tokenRepository, never()).save(any());
+        verify(notificationSpi, never()).send(any());
     }
 
     @Test
@@ -249,7 +263,7 @@ class PasswordResetServiceTest {
             return t;
         });
 
-        passwordResetService.sendAdminResetEmail(6);
+        passwordResetService.sendAdminResetEmail(6, 1);
 
         ArgumentCaptor<String> linkCaptor = ArgumentCaptor.forClass(String.class);
         verify(emailTemplateService).renderAdminResetPasswordEmail(linkCaptor.capture(), anyString());

@@ -3,6 +3,7 @@ package dev.mozhno.auth;
 import org.junit.jupiter.api.Test;
 import dev.mozhno.BaseIntegrationTest;
 import dev.mozhno.apikeys.ApiKeyRepository;
+import dev.mozhno.projects.Project;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -122,6 +123,32 @@ class UserRepositoryTest extends BaseIntegrationTest {
 
         User reloaded = userRepository.findById(saved.getId());
         assertEquals(creatorId, reloaded.getCreatedBy());
+    }
+
+    @Test
+    void countByProjectId_shouldCountOnlyUsersOfProject() {
+        Project project = new Project();
+        project.setName("Count Project");
+        Integer projectId = projectRepository.save(project).getId();
+
+        Project other = new Project();
+        other.setName("Other Count Project");
+        Integer otherProjectId = projectRepository.save(other).getId();
+
+        jdbcTemplate.update(
+            "INSERT INTO users (email, password_hash, role, project_id) VALUES (?, ?, ?, ?)",
+            "count-a@test.com", "h1", "admin", projectId);
+        jdbcTemplate.update(
+            "INSERT INTO users (email, password_hash, role, project_id) VALUES (?, ?, ?, ?)",
+            "count-b@test.com", "h2", "viewer", projectId);
+        jdbcTemplate.update(
+            "INSERT INTO users (email, password_hash, role, project_id) VALUES (?, ?, ?, ?)",
+            "count-c@test.com", "h3", "viewer", otherProjectId);
+        jdbcTemplate.execute("INSERT INTO users (email, password_hash, role) VALUES ('count-none@test.com', 'h4', 'viewer')");
+
+        assertEquals(2, userRepository.countByProjectId(projectId));
+        assertEquals(1, userRepository.countByProjectId(otherProjectId));
+        assertEquals(0, userRepository.countByProjectId(99999));
     }
 
     @Test

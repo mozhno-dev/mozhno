@@ -40,48 +40,44 @@ public class UserService {
     }
 
     /**
-     * Returns all users as DTOs.
+     * Returns all users of the given project as DTOs.
      *
+     * @param projectId owning project id
      * @return list of user DTOs
      */
     @Transactional(readOnly = true)
-    public List<UserDto> findAll() {
-        return userRepository.findAll().stream()
+    public List<UserDto> findAll(Integer projectId) {
+        return userRepository.findByProjectId(projectId).stream()
             .map(this::toDto)
             .toList();
     }
 
     /**
-     * Finds a user by id.
+     * Finds a user by id within the given project.
      *
-     * @param id user id
+     * @param id        user id
+     * @param projectId owning project id
      * @return user DTO
-     * @throws RuntimeException if not found
+     * @throws NotFoundException if the user does not exist in the project
      */
     @Transactional(readOnly = true)
-    public UserDto findById(Integer id) {
-        User user = userRepository.findById(id);
-        if (user == null) {
-            throw new NotFoundException("User", id);
-        }
-        return toDto(user);
+    public UserDto findById(Integer id, Integer projectId) {
+        return toDto(requireUserInProject(id, projectId));
     }
 
     /**
      * Updates an existing user. Only non-null fields in the request are applied.
      * Email and name are immutable after account creation — set at invite acceptance.
      *
-     * @param id      user id
-     * @param request update payload (partial)
+     * @param id        user id
+     * @param request   update payload (partial)
+     * @param projectId owning project id
      * @return updated user DTO
-     * @throws RuntimeException if user not found
+     * @throws NotFoundException if the user does not exist in the project
      */
     @Transactional
-    public UserDto update(Integer id, UserUpdateRequest request) {
-        User user = userRepository.findById(id);
-        if (user == null) {
-            throw new NotFoundException("User", id);
-        }
+    public UserDto update(Integer id, UserUpdateRequest request, Integer projectId) {
+        User user = requireUserInProject(id, projectId);
         if (request.password() != null) {
             PasswordValidator.validate(request.password(), user.getEmail());
             user.setPasswordHash(passwordEncoder.encode(request.password()));
@@ -101,14 +97,15 @@ public class UserService {
     }
 
     /**
-     * Deletes a user by id. Idempotent — no error if the user does not exist.
+     * Deletes a user by id within the given project.
      *
-     * @param id user id
+     * @param id        user id
+     * @param projectId owning project id
+     * @throws NotFoundException if the user does not exist in the project
      */
     @Transactional
-    public void delete(Integer id) {
-        User user = userRepository.findById(id);
-        if (user == null) return;
+    public void delete(Integer id, Integer projectId) {
+        User user = requireUserInProject(id, projectId);
         if ("admin".equals(user.getRole())) {
             ensureGroupHasOtherAdmin(user);
         }
@@ -121,16 +118,15 @@ public class UserService {
     /**
      * Uploads an avatar image for a user, storing bytes in the database.
      *
-     * @param id   the user ID
-     * @param file the uploaded image file
+     * @param id        the user ID
+     * @param file      the uploaded image file
+     * @param projectId owning project id
      * @return the updated user DTO
+     * @throws NotFoundException if the user does not exist in the project
      */
     @Transactional
-    public UserDto uploadAvatar(Integer id, MultipartFile file) {
-        User user = userRepository.findById(id);
-        if (user == null) {
-            throw new NotFoundException("User", id);
-        }
+    public UserDto uploadAvatar(Integer id, MultipartFile file, Integer projectId) {
+        User user = requireUserInProject(id, projectId);
         byte[] bytes;
         try {
             bytes = file.getBytes();
@@ -171,18 +167,29 @@ public class UserService {
     }
 
     /**
-     * Returns the avatar binary data for a user.
+     * Returns the avatar binary data for a user of the given project.
      *
-     * @param id the user ID
+     * @param id        the user ID
+     * @param projectId owning project id
      * @return avatar bytes, or null if no avatar is set
+     * @throws NotFoundException if the user does not exist in the project
      */
     @Transactional(readOnly = true)
-    public byte[] getAvatarData(Integer id) {
-        User user = userRepository.findById(id);
-        if (user == null || user.getAvatar() == null || user.getAvatar().isEmpty()) {
+    public byte[] getAvatarData(Integer id, Integer projectId) {
+        User user = requireUserInProject(id, projectId);
+        if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
             return null;
         }
         return userRepository.getAvatarData(id);
+    }
+
+    private User requireUserInProject(Integer id, Integer projectId) {
+        User user = userRepository.findById(id);
+        if (user == null || user.getProjectId() == null
+            || !user.getProjectId().equals(projectId)) {
+            throw new NotFoundException("User", id);
+        }
+        return user;
     }
 
     private UserDto toDto(User user) {

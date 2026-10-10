@@ -4,6 +4,7 @@ import { Mail, Lock } from '@/shared/icons';
 import { GradientButton, ErrorBox, getErrorMessage } from '@/shared';
 import { Input } from '@/app/components/ui/input';
 import { Checkbox } from '@/app/components/ui/checkbox';
+import { PluginSlot } from '@/app/components/PluginSlot';
 import { Wordmark } from '@/shared/components/Wordmark';
 import { useAuth } from '@/app/auth/useAuth';
 import { useT } from '@/i18n';
@@ -138,6 +139,11 @@ export function Auth() {
                 {t('auth.login')}
               </GradientButton>
             </form>
+
+            <div className="mt-6 space-y-4">
+              <PluginSlot slotId="auth.social" />
+              <PluginSlot slotId="auth.signup" />
+            </div>
           </div>
         </div>
       </div>

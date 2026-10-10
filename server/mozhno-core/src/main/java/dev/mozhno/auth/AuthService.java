@@ -50,7 +50,7 @@ public class AuthService {
      * @return login response containing access token, refresh token, and user DTO
      */
     public LoginResponse login(String email, String password, boolean rememberMe) {
-        return login(email, password, null, Collections.emptyMap(), rememberMe, null);
+        return login(email, password, null, Collections.emptyMap(), rememberMe);
     }
 
     /**
@@ -62,12 +62,10 @@ public class AuthService {
      * @param provider   authentication provider name (e.g. "ldap", "sso"), or null
      * @param params     additional provider-specific parameters
      * @param rememberMe whether to issue a long-lived refresh token
-     * @param projectId  project ID from the login request, or null
      * @return login response containing access token, refresh token, and user DTO
      */
     public LoginResponse login(String email, String password, String provider,
-                                java.util.Map<String, String> params, boolean rememberMe,
-                                Integer projectId) {
+                                java.util.Map<String, String> params, boolean rememberMe) {
         AuthenticationFlowSpi.AuthRequest request = new AuthenticationFlowSpi.AuthRequest(
             email, password, provider, params);
 

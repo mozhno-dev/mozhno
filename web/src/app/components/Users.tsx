@@ -27,11 +27,12 @@ import { UserTableSkeleton } from '@/app/components/skeletons';
 import { api, UserDto } from '@/api';
 import { queryKeys } from '@/api/queryKeys';
 import { useProjectQuery } from '@/app/hooks/queries';
+import { AuthedAvatarImage } from '@/app/components/AuthedAvatarImage';
 import { SectionHeader, GradientButton, EmptyState, SearchInput, ColorIcon, ErrorBox, Badge, getErrorMessage, Fab } from '@/shared';
 import { EmptyUsersIllustration } from '@/shared/components/illustrations';
 import { useT, useLocale, t } from '@/i18n';
 import { loadLocale, toIntlLocale } from '@/i18n/locale';
-import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/app/components/ui/avatar';
 
 function formatDate(d: string) {
   if (!d) return '—';
@@ -466,8 +467,8 @@ export function Users() {
                       <div className="flex-1 min-w-0 flex items-center gap-3">
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
                           <Avatar className="w-8 h-8 shadow-md shrink-0">
-                            <AvatarImage
-                              src={hasAvatar ? avatarUrl : undefined}
+                            <AuthedAvatarImage
+                              src={hasAvatar ? avatarUrl : null}
                               alt={user.name ?? ''}
                             />
                             <AvatarFallback className="bg-brand text-caption font-bold text-primary-foreground">
@@ -702,8 +703,8 @@ export function Users() {
             {editingUser && (
               <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-gradient-subtle-start to-gradient-subtle-end dark:from-brand/5 dark:to-brand/5 border border-info/20 dark:border-brand/20 rounded-xl">
                 <Avatar className="w-10 h-10 shadow-md shrink-0">
-                  <AvatarImage
-                    src={editingUser.avatar ? api.users.getAvatarUrl(editingUser.id) : undefined}
+                  <AuthedAvatarImage
+                    src={editingUser.avatar ? api.users.getAvatarUrl(editingUser.id) : null}
                     alt={editingUser.name ?? ''}
                   />
                   <AvatarFallback className="bg-brand text-body-sm font-bold text-primary-foreground">

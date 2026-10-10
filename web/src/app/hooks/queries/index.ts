@@ -11,3 +11,4 @@ export type { SparklineData } from './useMetricsSparklineQuery';
 export { useOverviewQuery } from './useOverviewQuery';
 export { useInvalidateQueries } from './useInvalidateQueries';
 export { useProjectLogo } from './useProjectLogo';
+export { useAuthedImage } from './useAuthedImage';
